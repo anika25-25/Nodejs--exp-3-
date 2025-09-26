@@ -1,0 +1,28 @@
+{
+  "name": "concurrent-ticket-booking",
+  "version": "1.0.0",
+  "description": "Concurrent Ticket Booking System with Seat Locking and Confirmation",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --runInBand",
+    "test:concurrent": "node test/concurrent-test.js"
+  },
+  "keywords": ["express", "ticket-booking", "concurrency", "seat-locking", "mutex"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4",
+    "nodemon": "^3.1.4"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}

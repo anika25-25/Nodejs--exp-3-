@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎫 Concurrent Ticket Booking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        input, select, button {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #e53e3e;
+        }
+        
+        .btn-danger:hover {
+            background: #c53030;
+        }
+        
+        .btn-success {
+            background: #38a169;
+        }
+        
+        .btn-success:hover {
+            background: #2f855a;
+        }
+        
+        .theater {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .theater h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4a5568;
+        }
+        
+        .screen {
+            background: linear-gradient(to bottom, #2d3748, #4a5568);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin: 0 auto 30px;
+            border-radius: 50px;
+            width: 80%;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .seat-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .seat {
+            aspect-ratio: 1;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .seat:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .seat.available {
+            background: #f0fff4;
+            border-color: #38a169;
+            color: #2f855a;
+        }
+        
+        .seat.locked {
+            background: #fffbeb;
+            border-color: #d69e2e;
+            color: #b7791f;
+            animation: pulse 2s infinite;
+        }
+        
+        .seat.booked {
+            background: #fed7d7;
+            border-color: #e53e3e;
+            color: #c53030;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .seat .lock-timer {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #d69e2e;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stats {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid;
+        }
+        
+        .legend-color.available {
+            background: #f0fff4;
+            border-color: #38a169;
+        }
+        
+        .legend-color.locked {
+            background: #fffbeb;
+            border-color: #d69e2e;
+        }
+        
+        .legend-color.booked {
+            background: #fed7d7;
+            border-color: #e53e3e;
+        }
+        
+        .response-area {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+        
+        .response {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .concurrent-test {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .test-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .test-result {
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .test-result.success {
+            background: #f0fff4;
+            border-color: #38a169;
+        }
+        
+        .test-result.error {
+            background: #fed7d7;
+            border-color: #e53e3e;
+        }
+        
+        @media (max-width: 768px) {
+            .seat-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎫 Concurrent Ticket Booking System</h1>
+            <p>Real-time seat locking with concurrency control and race condition prevention</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <input type="text" id="userId" placeholder="User ID (e.g., user123)" value="user123">
+                <button onclick="refreshSeats()">🔄 Refresh Seats</button>
+                <button onclick="resetSeats()" class="btn-danger">🗑️ Reset All Seats</button>
+                <button onclick="runConcurrentTest()" class="btn-success">⚡ Test Concurrent Booking</button>
+            </div>
+            <div class="control-group">
+                <input type="text" id="seatId" placeholder="Seat ID (e.g., A5)">
+                <button onclick="lockSeat()">🔒 Lock Seat</button>
+                <button onclick="confirmBooking()" class="btn-success">✅ Confirm Booking</button>
+                <button onclick="unlockSeat()" class="btn-danger">🔓 Unlock Seat</button>
+            </div>
+        </div>
+
+        <!-- Theater Layout -->
+        <div class="theater">
+            <h3>🎬 Theater Layout</h3>
+            <div class="screen">📺 SCREEN</div>
+            <div class="seat-grid" id="seatGrid">
+                <!-- Seats will be populated here -->
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be populated here -->
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color available"></div>
+                    <span>Available</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color locked"></div>
+                    <span>Locked (1 min)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color booked"></div>
+                    <span>Booked</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Concurrent Test Section -->
+        <div class="concurrent-test">
+            <h3>⚡ Concurrent Booking Test</h3>
+            <p>Simulate multiple users trying to book the same seat simultaneously to test race condition prevention.</p>
+            <div class="control-group">
+                <select id="testSeat">
+                    <option value="A1">Seat A1</option>
+                    <option value="B3">Seat B3</option>
+                    <option value="C5">Seat C5</option>
+                </select>
+                <input type="number" id="concurrentUsers" value="5" min="2" max="10" placeholder="Users">
+                <button onclick="runConcurrentTest()" class="btn-success">🚀 Run Test</button>
+            </div>
+            <div class="test-results" id="testResults"></div>
+        </div>
+
+        <!-- Response Area -->
+        <div class="response-area">
+            <h3>📡 API Response</h3>
+            <div class="response" id="response">Welcome! Click on seats to interact or use the controls above.</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:4000';
+        let lockTimers = {};
+        let currentLocks = {};
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshSeats();
+            setInterval(refreshSeats, 5000); // Auto-refresh every 5 seconds
+        });
+
+        // Display API response
+        function displayResponse(data) {
+            document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Refresh seats from server
+        async function refreshSeats() {
+            try {
+                const response = await fetch(`${API_BASE}/seats`);
+                const data = await response.json();
+                displayResponse(data);
+                
+                if (data.success) {
+                    updateSeatGrid(data.data.seats);
+                    updateStats(data.data.statistics);
+                }
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        // Update seat grid visual
+        function updateSeatGrid(seats) {
+            const grid = document.getElementById('seatGrid');
+            grid.innerHTML = '';
+            
+            seats.forEach(seat => {
+                const seatEl = document.createElement('div');
+                seatEl.className = `seat ${seat.status}`;
+                seatEl.textContent = seat.id;
+                seatEl.onclick = () => selectSeat(seat.id);
+                
+                // Add lock timer if seat is locked
+                if (seat.status === 'locked' && seat.lockExpiresAt) {
+                    const timer = document.createElement('div');
+                    timer.className = 'lock-timer';
+                    seatEl.appendChild(timer);
+                    updateLockTimer(seat.id, seat.lockExpiresAt, timer);
+                }
+                
+                grid.appendChild(seatEl);
+            });
+        }
+
+        // Update lock timer countdown
+        function updateLockTimer(seatId, expiresAt, timerEl) {
+            clearInterval(lockTimers[seatId]);
+            
+            lockTimers[seatId] = setInterval(() => {
+                const now = new Date();
+                const expires = new Date(expiresAt);
+                const remaining = Math.max(0, expires - now);
+                
+                if (remaining > 0) {
+                    const seconds = Math.ceil(remaining / 1000);
+                    timerEl.textContent = seconds;
+                } else {
+                    timerEl.textContent = '0';
+                    clearInterval(lockTimers[seatId]);
+                    refreshSeats(); // Refresh to show seat as available
+                }
+            }, 1000);
+        }
+
+        // Update statistics display
+        function updateStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #38a169;">${stats.available}</div>
+                    <div class="stat-label">Available</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #d69e2e;">${stats.locked}</div>
+                    <div class="stat-label">Locked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #e53e3e;">${stats.booked}</div>
+                    <div class="stat-label">Booked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #4a5568;">${stats.total}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+            `;
+        }
+
+        // Select seat (fill in seat ID input)
+        function selectSeat(seatId) {
+            document.getElementById('seatId').value = seatId;
+        }
+
+        // Lock a seat
+        async function lockSeat() {
+            const seatId = document.getElementById('seatId').value.toUpperCase();
+            const userId = document.getElementById('userId').value;
+            
+            if (!seatId || !userId) {
+                alert('Please enter both Seat ID and User ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/seats/${seatId}/lock`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId })
+                });
+                
+                const data = await response.json();
+                displayResponse(data);
+                
+                if (data.success) {
+                    currentLocks[seatId] = data.data.lockId;
+                    refreshSeats();
+                }
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        // Confirm booking
+        async function confirmBooking() {
+            const seatId = document.getElementById('seatId').value.toUpperCase();
+            const userId = document.getElementById('userId').value;
+            const lockId = currentLocks[seatId];
+            
+            if (!seatId || !userId) {
+                alert('Please enter both Seat ID and User ID');
+                return;
+            }
+            
+            if (!lockId) {
+                alert('Please lock the seat first');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/seats/${seatId}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, lockId })
+                });
+                
+                const data = await response.json();
+                displayResponse(data);
+                
+                if (data.success) {
+                    delete currentLocks[seatId];
+                    refreshSeats();
+                }
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        // Unlock a seat
+        async function unlockSeat() {
+            const seatId = document.getElementById('seatId').value.toUpperCase();
+            const userId = document.getElementById('userId').value;
+            const lockId = currentLocks[seatId];
+            
+            if (!seatId || !userId) {
+                alert('Please enter both Seat ID and User ID');
+                return;
+            }
+            
+            if (!lockId) {
+                alert('No lock found for this seat');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/seats/${seatId}/unlock`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, lockId })
+                });
+                
+                const data = await response.json();
+                displayResponse(data);
+                
+                if (data.success) {
+                    delete currentLocks[seatId];
+                    refreshSeats();
+                }
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        // Reset all seats
+        async function resetSeats() {
+            if (!confirm('Are you sure you want to reset all seats?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/seats/reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                displayResponse(data);
+                
+                if (data.success) {
+                    currentLocks = {};
+                    Object.keys(lockTimers).forEach(key => clearInterval(lockTimers[key]));
+                    lockTimers = {};
+                    refreshSeats();
+                }
+            } catch (error) {
+                displayResponse({ error: error.message });
+            }
+        }
+
+        // Run concurrent booking test
+        async function runConcurrentTest() {
+            const seatId = document.getElementById('testSeat').value;
+            const userCount = parseInt(document.getElementById('concurrentUsers').value);
+            const resultsContainer = document.getElementById('testResults');
+            
+            resultsContainer.innerHTML = '<div class="test-result">Running concurrent test...</div>';
+            
+            // Create concurrent requests
+            const promises = [];
+            for (let i = 1; i <= userCount; i++) {
+                const userId = `testuser${i}`;
+                promises.push(
+                    fetch(`${API_BASE}/seats/${seatId}/lock`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId })
+                    }).then(response => response.json())
+                      .then(data => ({ userId, ...data }))
+                      .catch(error => ({ userId, error: error.message }))
+                );
+            }
+            
+            try {
+                const results = await Promise.all(promises);
+                
+                // Display results
+                resultsContainer.innerHTML = '';
+                results.forEach(result => {
+                    const resultEl = document.createElement('div');
+                    resultEl.className = `test-result ${result.success ? 'success' : 'error'}`;
+                    resultEl.innerHTML = `
+                        <strong>${result.userId}</strong><br>
+                        ${result.success ? '✅ Success' : '❌ Failed'}<br>
+                        <small>${result.message || result.error}</small>
+                    `;
+                    resultsContainer.appendChild(resultEl);
+                });
+                
+                // Show summary
+                const successful = results.filter(r => r.success).length;
+                const summaryEl = document.createElement('div');
+                summaryEl.className = 'test-result';
+                summaryEl.style.background = '#e6fffa';
+                summaryEl.style.borderColor = '#319795';
+                summaryEl.innerHTML = `
+                    <strong>📊 Test Summary</strong><br>
+                    ${successful} out of ${userCount} users successfully locked the seat.<br>
+                    ${userCount - successful} users were correctly prevented from double-booking.
+                `;
+                resultsContainer.appendChild(summaryEl);
+                
+                refreshSeats();
+            } catch (error) {
+                resultsContainer.innerHTML = `<div class="test-result error">Test failed: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
